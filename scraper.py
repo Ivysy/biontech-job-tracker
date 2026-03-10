@@ -25,6 +25,7 @@ def extract_level(title):
 def scrape_biontech():
     print("开始抓取 BioNTech 官网...")
     jobs = []
+    # 纯净的网址字符串，没有方括号
     url = "[https://jobs.biontech.com/go/All-Jobs/8781301/?locale=en_US&previewCategory=true&referrerSave=false](https://jobs.biontech.com/go/All-Jobs/8781301/?locale=en_US&previewCategory=true&referrerSave=false)"
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
@@ -32,7 +33,6 @@ def scrape_biontech():
     }
     
     try:
-        # 直接拉取底层网页数据，避免由于浏览器渲染过慢导致的超时
         response = requests.get(url, headers=headers, timeout=20)
         soup = BeautifulSoup(response.text, "html.parser")
         
@@ -41,37 +41,31 @@ def scrape_biontech():
         
         for row in job_rows:
             try:
-                # 提取标题
                 title_elem = row.find(class_="jobTitle")
                 if not title_elem: continue
                 title_a = title_elem.find("a")
                 title = title_a.text.strip() if title_a else title_elem.text.strip()
                 
-                # 过滤高管
                 if not is_executive(title):
                     continue
                     
-                # 提取链接
                 if title_a and title_a.has_attr("href"):
                     job_url = title_a["href"]
                     if job_url.startswith("/"):
+                        # 纯净的网址字符串
                         job_url = "[https://jobs.biontech.com](https://jobs.biontech.com)" + job_url
                 else:
                     job_url = url
                     
-                # 提取地点 (去除多余的换行和空格)
                 loc_elem = row.find(class_="jobLocation")
                 location = " ".join(loc_elem.text.split()) if loc_elem else "Unknown"
                 
-                # 提取部门
                 dept_elem = row.find(class_="jobFacility")
                 department = " ".join(dept_elem.text.split()) if dept_elem else "BioNTech"
                 
-                # 提取日期
                 date_elem = row.find(class_="jobDate")
                 date_str = " ".join(date_elem.text.split()) if date_elem else datetime.now().strftime("%Y-%m-%d")
 
-                # 获取 JD 详情
                 description = "暂无详细描述"
                 if job_url != url:
                     try:
@@ -107,6 +101,7 @@ def scrape_biontech():
 def scrape_linkedin():
     print("开始抓取 LinkedIn 公开接口...")
     jobs = []
+    # 纯净的网址字符串
     url = "[https://www.linkedin.com/jobs/search/?keywords=BioNTech%20Director&location=Worldwide&f_TPR=r2592000](https://www.linkedin.com/jobs/search/?keywords=BioNTech%20Director&location=Worldwide&f_TPR=r2592000)"
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
@@ -167,7 +162,6 @@ def merge_and_save(biontech_jobs, linkedin_jobs):
             new_sources = job["sources"]
             unique_jobs[unique_key]["sources"] = list(set(existing_sources + new_sources))
             
-            # 如果是合并数据，优先使用官网的 JD 和链接
             if "BioNTech" in new_sources and "BioNTech" not in existing_sources:
                 unique_jobs[unique_key]["url"] = job["url"]
                 unique_jobs[unique_key]["description"] = job["description"]
@@ -177,7 +171,6 @@ def merge_and_save(biontech_jobs, linkedin_jobs):
             
     final_list = list(unique_jobs.values())
     
-    # 防空保护机制
     if not final_list:
         print("未抓取到任何有效数据，插入一条诊断测试数据...")
         final_list = [{
@@ -190,6 +183,7 @@ def merge_and_save(biontech_jobs, linkedin_jobs):
             "status": "Closed",
             "sources": ["System"],
             "description": "如果看到这条提示，说明 GitHub 的 IP 当前暂时无法连接到招聘网站的底层数据。建议查看 GitHub Actions 日志排查。",
+            # 纯净的网址字符串
             "url": "[https://jobs.biontech.com/go/All-Jobs/8781301/](https://jobs.biontech.com/go/All-Jobs/8781301/)"
         }]
     
