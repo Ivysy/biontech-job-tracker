@@ -1,1 +1,16 @@
-[]
+[
+  {
+    "id": 999,
+    "title": "抓取失败诊断提示 (Scraper Blocked/No Data)",
+    "level": "Director",
+    "department": "System Debug",
+    "location": "GitHub Actions",
+    "date": "2026-03-10",
+    "status": "Closed",
+    "sources": [
+      "System"
+    ],
+    "description": "当前爬虫在 GitHub 服务器中未能抓取到真实数据。这通常是因为反爬虫机制拦截，或目标官网的网页代码结构发生了变化导致脚本寻找元素失败。请查看 GitHub Actions 的后台日志 (Logs) 获取详细报错信息。",
+    "url": "[https://jobs.biontech.com/go/All-Jobs/8781301/](https://jobs.biontech.com/go/All-Jobs/8781301/)"
+  }
+]
