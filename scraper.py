@@ -25,7 +25,8 @@ def extract_level(title):
 def scrape_biontech():
     print("开始抓取 BioNTech 官网...")
     jobs = []
-    # 纯净的网址字符串，没有方括号
+    
+    # 纯净网址1
     url = "[https://jobs.biontech.com/go/All-Jobs/8781301/?locale=en_US&previewCategory=true&referrerSave=false](https://jobs.biontech.com/go/All-Jobs/8781301/?locale=en_US&previewCategory=true&referrerSave=false)"
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
@@ -52,7 +53,7 @@ def scrape_biontech():
                 if title_a and title_a.has_attr("href"):
                     job_url = title_a["href"]
                     if job_url.startswith("/"):
-                        # 纯净的网址字符串
+                        # 纯净网址2
                         job_url = "[https://jobs.biontech.com](https://jobs.biontech.com)" + job_url
                 else:
                     job_url = url
@@ -101,7 +102,8 @@ def scrape_biontech():
 def scrape_linkedin():
     print("开始抓取 LinkedIn 公开接口...")
     jobs = []
-    # 纯净的网址字符串
+    
+    # 纯净网址3
     url = "[https://www.linkedin.com/jobs/search/?keywords=BioNTech%20Director&location=Worldwide&f_TPR=r2592000](https://www.linkedin.com/jobs/search/?keywords=BioNTech%20Director&location=Worldwide&f_TPR=r2592000)"
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
@@ -182,8 +184,8 @@ def merge_and_save(biontech_jobs, linkedin_jobs):
             "date": datetime.now().strftime("%Y-%m-%d"),
             "status": "Closed",
             "sources": ["System"],
-            "description": "如果看到这条提示，说明 GitHub 的 IP 当前暂时无法连接到招聘网站的底层数据。建议查看 GitHub Actions 日志排查。",
-            # 纯净的网址字符串
+            "description": "如果看到这条提示，说明抓取失败。请务必检查 scraper.py 代码中的网址是否被意外加上了方括号[]或圆括号()。",
+            # 纯净网址4
             "url": "[https://jobs.biontech.com/go/All-Jobs/8781301/](https://jobs.biontech.com/go/All-Jobs/8781301/)"
         }]
     
