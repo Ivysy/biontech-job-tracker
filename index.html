@@ -180,27 +180,34 @@
                             <h3 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2">
                                 <IconChartBar /> 过去 30 天新职位发布趋势
                             </h3>
-                            <div className="flex items-end h-40 gap-1 sm:gap-2">
-                                {chartData.map((d, idx) => (
-                                    <div key={idx} className="flex-1 flex flex-col items-center group relative h-full justify-end">
-                                        {/* Tooltip 悬浮提示 */}
-                                        <div className="absolute -top-10 bg-slate-800 text-white text-xs py-1.5 px-2.5 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 pointer-events-none">
-                                            {d.fullDate} : <span className="font-bold">{d.count}</span> 个职位
+                            <div className="h-40 flex flex-col pt-4">
+                                {/* 上层：柱子图表区 */}
+                                <div className="flex-1 flex items-end gap-1 sm:gap-2 relative border-b border-slate-100">
+                                    {chartData.map((d, idx) => (
+                                        <div key={idx} className="flex-1 flex flex-col items-center group relative h-full justify-end">
+                                            {/* Tooltip 悬浮提示 */}
+                                            <div className="absolute -top-10 bg-slate-800 text-white text-xs py-1.5 px-2.5 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 pointer-events-none">
+                                                {d.fullDate} : <span className="font-bold">{d.count}</span> 个职位
+                                            </div>
+                                            {/* 柱子 */}
+                                            <div 
+                                                className="w-full bg-blue-400 hover:bg-[#003865] rounded-t-sm transition-colors duration-300" 
+                                                style={{ 
+                                                    height: `${(d.count / maxChartCount) * 100}%`,
+                                                    minHeight: d.count > 0 ? '4px' : '0'
+                                                }}
+                                            ></div>
                                         </div>
-                                        {/* 柱子 */}
-                                        <div 
-                                            className="w-full bg-blue-400 hover:bg-[#003865] rounded-t-sm transition-colors duration-300" 
-                                            style={{ 
-                                                height: `${(d.count / maxChartCount) * 100}%`,
-                                                minHeight: d.count > 0 ? '4px' : '0'
-                                            }}
-                                        ></div>
-                                        {/* X轴标签 (只在某些点显示以防拥挤) */}
-                                        <div className="text-[9px] text-slate-400 mt-2 truncate w-full text-center">
+                                    ))}
+                                </div>
+                                {/* 下层：X轴日期标签区 */}
+                                <div className="flex gap-1 sm:gap-2 mt-2">
+                                    {chartData.map((d, idx) => (
+                                        <div key={`label-${idx}`} className="flex-1 text-[9px] text-slate-400 text-center truncate">
                                             {idx % 3 === 0 ? d.displayDate : ''}
                                         </div>
-                                    </div>
-                                ))}
+                                    ))}
+                                </div>
                             </div>
                         </div>
 
