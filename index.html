@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BioNTech 高管招聘实时监控</title>
+    <!-- 引入 React 和 Tailwind CSS (无需安装，直接使用) -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useMemo } = React;
+
+        // 图标组件
+        const IconBuilding = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="2" width="16" height="20" rx="2" ry="2"></rect><path d="M9 22v-4h6v4"></path><path d="M8 6h.01"></path><path d="M16 6h.01"></path><path d="M12 6h.01"></path><path d="M12 10h.01"></path><path d="M12 14h.01"></path><path d="M16 10h.01"></path><path d="M16 14h.01"></path><path d="M8 10h.01"></path><path d="M8 14h.01"></path></svg>;
+        const IconBriefcase = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg>;
+        const IconMapPin = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"></path><circle cx="12" cy="10" r="3"></circle></svg>;
+        const IconExternal = () => <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>;
+        const IconSearch = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>;
+
+        function App() {
+            const [jobs, setJobs] = useState([]);
+            const [loading, setLoading] = useState(true);
+            const [searchTerm, setSearchTerm] = useState('');
+            const [error, setError] = useState(null);
+
+            useEffect(() => {
+                // 读取 GitHub 上的 jobs_data.json 文件
+                fetch('./public/jobs_data.json')
+                    .then(response => {
+                        if (!response.ok) throw new Error('无法读取数据文件，请确认 public/jobs_data.json 是否存在。');
+                        return response.json();
+                    })
+                    .then(data => {
+                        // 清洗数据：修复 Python 抓取时由于 markdown 造成的 URL 乱码
+                        const cleanedData = data.map(job => {
+                            let cleanUrl = job.url;
+                            if (cleanUrl.includes('](')) {
+                                const match = cleanUrl.match(/\]\((.*?)\)/);
+                                if (match) {
+                                    const base = match[1];
+                                    const rest = cleanUrl.split(')')[1] || '';
+                                    cleanUrl = base + rest;
+                                }
+                            }
+                            return { ...job, url: cleanUrl };
+                        });
+                        setJobs(cleanedData);
+                        setLoading(false);
+                    })
+                    .catch(err => {
+                        console.error(err);
+                        setError(err.message);
+                        setLoading(false);
+                    });
+            }, []);
+
+            const filteredJobs = useMemo(() => {
+                return jobs.filter(job => 
+                    job.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                    job.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                    job.department.toLowerCase().includes(searchTerm.toLowerCase())
+                );
+            }, [jobs, searchTerm]);
+
+            const stats = useMemo(() => {
+                return {
+                    total: jobs.length,
+                    active: jobs.filter(j => j.status === 'Active').length,
+                    director: jobs.filter(j => j.level === 'Director').length,
+                    senior: jobs.filter(j => j.level.includes('Senior') || j.level.includes('Executive') || j.level.includes('President')).length
+                };
+            }, [jobs]);
+
+            if (loading) return <div className="min-h-screen flex items-center justify-center text-xl font-bold text-slate-500">正在同步最新数据...</div>;
+            
+            if (error) return (
+                <div className="min-h-screen flex items-center justify-center p-6">
+                    <div className="bg-red-50 text-red-700 p-6 rounded-xl border border-red-200 max-w-lg text-center">
+                        <h2 className="text-xl font-bold mb-2">数据加载失败</h2>
+                        <p>{error}</p>
+                        <p className="mt-4 text-sm">请检查您的 GitHub Actions 是否成功运行生成了 public/jobs_data.json。</p>
+                    </div>
+                </div>
+            );
+
+            return (
+                <div>
+                    {/* Header */}
+                    <header className="bg-[#003865] text-white py-6 px-8 shadow-md">
+                        <div className="max-w-7xl mx-auto flex items-center gap-4">
+                            <div className="bg-white p-2.5 rounded-xl">
+                                <span className="text-[#003865]"><IconBuilding /></span>
+                            </div>
+                            <div>
+                                <h1 className="text-2xl font-bold tracking-tight">BioNTech 高管招聘监控看板</h1>
+                                <p className="text-blue-200 text-sm mt-1">自动同步自 BioNTech 官网及其他渠道 (Director 及以上)</p>
+                            </div>
+                        </div>
+                    </header>
+
+                    <main className="max-w-7xl mx-auto p-6 space-y-6">
+                        {/* KPI 卡片 */}
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                            {[
+                                { title: '抓取职位总数', value: stats.total, color: 'text-indigo-600', bg: 'bg-indigo-50' },
+                                { title: '招聘中 (Active)', value: stats.active, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+                                { title: '总监级别 (Director)', value: stats.director, color: 'text-blue-600', bg: 'bg-blue-50' },
+                                { title: '高级管理层 (VP/Senior)', value: stats.senior, color: 'text-amber-600', bg: 'bg-amber-50' }
+                            ].map((kpi, idx) => (
+                                <div key={idx} className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex items-center gap-4">
+                                    <div className={`p-4 rounded-full ${kpi.bg} ${kpi.color}`}>
+                                        <IconBriefcase />
+                                    </div>
+                                    <div>
+                                        <div className="text-slate-500 text-sm font-medium mb-1">{kpi.title}</div>
+                                        <div className="text-3xl font-bold text-slate-800">{kpi.value}</div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+
+                        {/* 数据表格区 */}
+                        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+                            <div className="p-5 border-b border-slate-100 bg-slate-50/50 flex flex-col sm:flex-row justify-between items-center gap-4">
+                                <h3 className="text-lg font-bold text-slate-800">最新职位列表</h3>
+                                <div className="relative w-full sm:w-72">
+                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"><IconSearch /></span>
+                                    <input 
+                                        type="text" 
+                                        placeholder="搜索职位、部门或地点..." 
+                                        className="w-full pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#003865]"
+                                        value={searchTerm}
+                                        onChange={e => setSearchTerm(e.target.value)}
+                                    />
+                                </div>
+                            </div>
+                            
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-left border-collapse">
+                                    <thead>
+                                        <tr className="bg-slate-50 text-slate-500 text-xs uppercase tracking-wider">
+                                            <th className="px-6 py-4 font-semibold w-1/3">职位名称 (Title)</th>
+                                            <th className="px-6 py-4 font-semibold">职级 (Level)</th>
+                                            <th className="px-6 py-4 font-semibold">地点 (Location)</th>
+                                            <th className="px-6 py-4 font-semibold">发布日期</th>
+                                            <th className="px-6 py-4 font-semibold text-right">操作</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-100">
+                                        {filteredJobs.length > 0 ? filteredJobs.map(job => (
+                                            <tr key={job.id} className="hover:bg-slate-50 transition-colors">
+                                                <td className="px-6 py-4">
+                                                    <div className="font-bold text-[#003865]">{job.title}</div>
+                                                    <div className="text-xs text-slate-500 mt-1 line-clamp-1">{job.department}</div>
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                                                        job.level.includes('President') ? 'bg-amber-100 text-amber-700' : 
+                                                        job.level.includes('Senior') || job.level.includes('Executive') ? 'bg-emerald-100 text-emerald-700' : 
+                                                        'bg-blue-100 text-blue-700'
+                                                    }`}>
+                                                        {job.level}
+                                                    </span>
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <div className="flex items-center gap-1.5 text-sm text-slate-600">
+                                                        <IconMapPin />
+                                                        {job.location}
+                                                    </div>
+                                                </td>
+                                                <td className="px-6 py-4 text-sm text-slate-600">{job.date}</td>
+                                                <td className="px-6 py-4 text-right">
+                                                    <a href={job.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white bg-[#003865] hover:bg-blue-800 rounded-lg transition-colors">
+                                                        直达官网
+                                                        <IconExternal />
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                        )) : (
+                                            <tr>
+                                                <td colSpan="5" className="px-6 py-12 text-center text-slate-500">
+                                                    没有找到符合条件的职位
+                                                </td>
+                                            </tr>
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </main>
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
